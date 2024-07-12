@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Simple Storage DApp</title>
+    <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js" type="application/javascript"></script>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        input, button { margin: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Simple Storage DApp 2506</h1>
+    <input type="number" id="valueInput" placeholder="Enter value">
+    <button onclick="storeValue()">Store Value</button>
+    <button onclick="retrieveValue()">Retrieve Value</button>
+    <p id="storedValue"></p>
+
+    <script>
+        const contractAddress = '0xec37abd2c808fd90256232ebc03ef7c2a331988f'; // Replace with your deployed contract address
+        const contractABI = [
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "num",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "store",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "retrieve",
+                "outputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            }
+        ];
+
+        let provider;
+        let signer;
+        let storageContract;
+
+        async function init() {
+            if (window.ethereum) {
+                provider = new ethers.providers.Web3Provider(window.ethereum);
+                await provider.send("eth_requestAccounts", []);
+                signer = provider.getSigner();
+                storageContract = new ethers.Contract(contractAddress, contractABI, signer);
+                console.log("Ethers initialized successfully");
+            } else {
+                console.log('No Ethereum browser detected. You should consider trying MetaMask!');
+            }
+        }
+
+        async function storeValue() {
+            const value = document.getElementById('valueInput').value;
+            if (value) {
+                const tx = await storageContract.store(value);
+                await tx.wait();
+                console.log('Value stored:', value);
+            } else {
+                alert('Please enter a value');
+            }
+        }
+
+        async function retrieveValue() {
+            const value = await storageContract.retrieve();
+            document.getElementById('storedValue').innerText = `Stored Value: ${value}`;
+            console.log('Value retrieved:', value);
+        }
+
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>
