@@ -2,23 +2,86 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Simple Storage DApp</title>
-    <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js" type="application/javascript"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Store Money Contract</title>
     <style>
-        body { font-family: Arial, sans-serif; }
-        input, button { margin: 5px; }
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 300px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            margin-bottom: 10px;
+        }
+
+        button {
+            padding: 10px 15px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        p {
+            font-size: 18px;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
-    <h1>Simple Storage DApp 2506</h1>
-    <input type="number" id="valueInput" placeholder="Enter value">
-    <button onclick="storeValue()">Store Value</button>
-    <button onclick="retrieveValue()">Retrieve Value</button>
-    <p id="storedValue"></p>
-
+    <div class="container">
+        <h1>Store Money Contract 888</h1>
+        <div class="form-group">
+            <label for="moneyInput">Enter Amount to Store:</label>
+            <input type="number" id="moneyInput" placeholder="Enter amount">
+            <button onclick="storeMoney()">Store Money</button>
+        </div>
+        <div class="form-group">
+            <button onclick="viewMoney()">View Stored Money</button>
+            <p id="storedMoney">Stored Money: <span id="moneyValue">-</span></p>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js@1.0.0-beta.37/dist/web3.min.js"></script>
     <script>
-        const contractAddress = '0x11a1ad875364e3e2af9a0d7ccac622752e427c4f'; // Replace with your deployed contract address
-        const contractABI = [
+        const contractAddress = "0xc7e0549f918ff2a00351bf5c2e672b946121ce89";
+        const abi = [
             {
                 "inputs": [
                     {
@@ -27,14 +90,14 @@
                         "type": "uint256"
                     }
                 ],
-                "name": "store",
+                "name": "store_m",
                 "outputs": [],
                 "stateMutability": "nonpayable",
                 "type": "function"
             },
             {
                 "inputs": [],
-                "name": "retrieve",
+                "name": "view_m",
                 "outputs": [
                     {
                         "internalType": "uint256",
@@ -47,40 +110,38 @@
             }
         ];
 
-        let provider;
-        let signer;
-        let storageContract;
+        let web3;
+        let contract;
 
-        async function init() {
+        window.onload = async () => {
             if (window.ethereum) {
-                provider = new ethers.providers.Web3Provider(window.ethereum);
-                await provider.send("eth_requestAccounts", []);
-                signer = provider.getSigner();
-                storageContract = new ethers.Contract(contractAddress, contractABI, signer);
-                console.log("Ethers initialized successfully");
+                web3 = new Web3(window.ethereum);
+                await window.ethereum.enable();
+                contract = new web3.eth.Contract(abi, contractAddress);
             } else {
-                console.log('No Ethereum browser detected. You should consider trying MetaMask!');
+                alert("Please install MetaMask to interact with this dApp.");
             }
+        };
+
+        async function storeMoney() {
+            const amount = document.getElementById('moneyInput').value;
+            const accounts = await web3.eth.getAccounts();
+            contract.methods.store_m(amount).send({ from: accounts[0] })
+                .on('transactionHash', function(hash){
+                    console.log("Transaction Hash: " + hash);
+                })
+                .on('confirmation', function(confirmationNumber, receipt){
+                    console.log("Confirmation Number: " + confirmationNumber);
+                })
+                .on('receipt', function(receipt){
+                    alert("Money stored successfully!");
+                });
         }
 
-        async function storeValue() {
-            const value = document.getElementById('valueInput').value;
-            if (value) {
-                const tx = await storageContract.store(value);
-                await tx.wait();
-                console.log('Value stored:', value);
-            } else {
-                alert('Please enter a value');
-            }
+        async function viewMoney() {
+            const value = await contract.methods.view_m().call();
+            document.getElementById('moneyValue').innerText = value;
         }
-
-        async function retrieveValue() {
-            const value = await storageContract.retrieve();
-            document.getElementById('storedValue').innerText = `Stored Value: ${value}`;
-            console.log('Value retrieved:', value);
-        }
-
-        window.addEventListener('load', init);
     </script>
 </body>
 </html>
